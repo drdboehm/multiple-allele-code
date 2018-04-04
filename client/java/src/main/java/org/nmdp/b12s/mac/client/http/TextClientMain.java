@@ -83,14 +83,18 @@ public class TextClientMain implements Closeable {
                 } else if (arg.equals("expand")) {
                     client.setOperationToExpand();
                     System.out.println("switch to" + client.operation.getOperation());
+                } else if (arg.equals("decode")) {
+                    client.setOperationToDecode();
+                    System.out.println("switch to" + client.operation.getOperation());
                 } else if (arg.equals("encode")) {
                     client.setOperationToEncode();
                     System.out.println("switch to: " + client.operation.getOperation());
                 } else if (f.exists()) {
                     processFile(f, client.operation);
                 } else {
-                    String expanded = client.sendRequest(arg);
-                    System.out.println(expanded);
+//                    String expanded = client.sendRequest(arg);
+                    String performed = client.operation.perform(arg);
+                    System.out.println(arg + " " + client.operation.getOperation() + "s to " + performed);
                 }
             }
         } finally {
@@ -102,7 +106,7 @@ public class TextClientMain implements Closeable {
         System.out.println(typings);
         String textResponse = "";
         try {
-            textResponse = macService.encode(hlaDbVersion, typings);
+            textResponse = macService.expand(hlaDbVersion, typings);
         } catch (IllegalArgumentException e) {
             // Notify user to correct input values.
             e.printStackTrace();
@@ -111,6 +115,20 @@ public class TextClientMain implements Closeable {
             e.printStackTrace();
         }
         return textResponse;
+    }
+
+    private void setOperationToDecode() {
+        this.operation = new Operation() {
+            @Override
+            public String perform(String inputValue) {
+                return macService.decode(inputValue);
+            }
+
+            @Override
+            public String getOperation() {
+                return "'decode'";
+            }
+        };
     }
 
     interface Operation {
@@ -122,26 +140,28 @@ public class TextClientMain implements Closeable {
 
     private void setOperationToExpand() {
         this.operation = new Operation() {
+            @Override
             public String perform(String inputValue) {
                 return macService.expand(hlaDbVersion, inputValue);
             }
 
             @Override
             public String getOperation() {
-                return "Expand operation";
+                return "'expand'";
             }
         };
     }
 
     private void setOperationToEncode() {
         this.operation = new Operation() {
+            @Override
             public String perform(String inputValue) {
                 return macService.encode(hlaDbVersion, inputValue);
             }
 
             @Override
             public String getOperation() {
-                return "Encode operation";
+                return "'encode'";
             }
         };
     }
@@ -154,13 +174,16 @@ public class TextClientMain implements Closeable {
         int lineNumber = 0;
         while (null != (typing = lnr.readLine())) {
             lineNumber = lnr.getLineNumber();
-            if (typing.length() < 6 || typing.indexOf('/') > 0) {
+//            if (typing.length() < 6 || typing.indexOf('/') > 0) {
+            if (typing.length() < 12) {
                 continue;// skip allele lists
             }
             try {
                 String value = operation.perform(typing);
                 if (value == null) {
                     System.out.println("NULL for : " + typing);
+                } else {
+                    System.out.printf("%2d = %s%n", lineNumber, value);
                 }
             } catch (Exception re) {
                 String message = re.toString();
