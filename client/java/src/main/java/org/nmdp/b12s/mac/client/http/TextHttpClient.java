@@ -29,6 +29,7 @@ import javax.net.ssl.SSLContext;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.ParseException;
@@ -50,9 +51,64 @@ import org.slf4j.LoggerFactory;
  */
 public class TextHttpClient implements Closeable {
 
+    private final URI baseUrl;
+    private CloseableHttpClient httpclient;
+    private Logger logger = LoggerFactory.getLogger(getClass());
+
+    @Inject
+    public TextHttpClient(@Named("alleleCodeServiceUrl") String baseAddress) {
+        this(baseAddress, HttpClients.custom().setProxy(new HttpHost("192.168.2.115", 3128, "http")).build());
+        
+    }
+
+    public TextHttpClient(String baseAddress, SSLContext sslcontext) {
+        this(baseAddress, buildTlsClient(sslcontext));
+    }
+
+    public TextHttpClient(String baseAddress, HttpHost proxyHost) {
+        this(baseAddress, HttpClients.custom().setProxy(proxyHost).build());
+    }
+
+    private TextHttpClient(String baseAddress, CloseableHttpClient httpClient) {
+        httpclient = httpClient;
+        try {
+            this.baseUrl = new URI(baseAddress + "/");
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("baseAddress is invalid: " + baseAddress, e);
+        }
+
+    }
+
+    private static CloseableHttpClient buildTlsClient(SSLContext sslcontext) {
+        // Allow TLSv1 protocol only
+        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                sslcontext,
+                new String[]{"TLSv1"},
+                null,
+                SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+
+        CloseableHttpClient tlsClient = HttpClients.custom()
+                .setSSLSocketFactory(sslsf)
+                .build();
+        return tlsClient;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (httpclient != null) {
+            httpclient.close();
+            httpclient = null;
+        }
+    }
+
+    public TextRequest path(String path) {
+        return new TextRequest(baseUrl.resolve(path));
+    }
+
     public class TextRequest {
 
         private URIBuilder uri;
+
         public TextRequest(URI uri) {
             this.uri = new URIBuilder(uri);
         }
@@ -129,9 +185,9 @@ public class TextHttpClient implements Closeable {
             }
             if (status == HttpStatus.SC_OK) {
                 return content;
-            } else if (status == HttpStatus.SC_NOT_FOUND ) {
+            } else if (status == HttpStatus.SC_NOT_FOUND) {
                 throw new IllegalArgumentException("not found: " + url);
-            } else if (status == HttpStatus.SC_BAD_REQUEST ) { 
+            } else if (status == HttpStatus.SC_BAD_REQUEST) {
                 logger.warn("bad request {} {}", url.getQuery(), content);
                 throw new IllegalArgumentException(content);
             }
@@ -139,56 +195,5 @@ public class TextHttpClient implements Closeable {
             throw new RuntimeException(content);
         }
 
-    }
-
-
-    private final URI baseUrl;
-    private CloseableHttpClient httpclient;
-    private Logger logger = LoggerFactory.getLogger(getClass());
-
-    @Inject
-    public TextHttpClient(@Named("alleleCodeServiceUrl") String baseAddress) {
-        this(baseAddress, HttpClients.custom().build());
-    }
-    
-    public TextHttpClient(String baseAddress, SSLContext sslcontext) {
-        this(baseAddress, buildTlsClient(sslcontext));
-    }
-    
-    private static CloseableHttpClient buildTlsClient(SSLContext sslcontext) {
-        // Allow TLSv1 protocol only
-        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-                sslcontext,
-                new String[] { "TLSv1" },
-                null,
-                SSLConnectionSocketFactory.getDefaultHostnameVerifier());
-        
-        CloseableHttpClient tlsClient = HttpClients.custom()
-                .setSSLSocketFactory(sslsf)
-                .build();
-        return tlsClient;
-    }
-    
-    private TextHttpClient(String baseAddress, CloseableHttpClient httpClient) {
-        httpclient = httpClient;
-        try {
-            this.baseUrl = new URI(baseAddress + "/");
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("baseAddress is invalid: " + baseAddress, e);
-        }
-
-    }
-
-    @Override
-    public void close() throws IOException {
-        if (httpclient != null) {
-            httpclient.close();
-            httpclient = null;
-        }
-    }
-
-    public TextRequest path(String path) {
-        return new TextRequest(baseUrl.resolve(path));
-    }
-
+    } // end class TextRequest
 }

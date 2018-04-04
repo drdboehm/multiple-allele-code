@@ -25,6 +25,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.net.ssl.SSLContext;
+import org.apache.http.HttpHost;
 
 import org.nmdp.b12s.mac.client.ImgtHlaRelease;
 import org.nmdp.b12s.mac.client.MultipleAlleleCodeService;
@@ -32,11 +33,11 @@ import org.nmdp.b12s.mac.client.http.TextHttpClient.TextRequest;
 
 /**
  * AlleleCodeService based on HttpClient.
- * 
+ *
  * <pre>
  * AlleleCodeService client = new HttpAlleleCodeService(alleleCodeServiceUrl);
  * </pre>
- * 
+ *
  * Also can be created using dependency injection if the Named String
  * "alleleCodeServiceUrl" is defined.
  */
@@ -48,11 +49,14 @@ public class HttpAlleleCodeService implements MultipleAlleleCodeService, Closeab
     public HttpAlleleCodeService(@Named("alleleCodeServiceUrl") String baseAddress) {
         textHttpClient = new TextHttpClient(baseAddress);
     }
-    
+
     public HttpAlleleCodeService(@Named("alleleCodeServiceUrl") String baseAddress, SSLContext sslContext) {
         textHttpClient = new TextHttpClient(baseAddress, sslContext);
     }
 
+    public HttpAlleleCodeService(@Named("alleleCodeServiceUrl") String baseAddress, HttpHost proxyHost) {
+        textHttpClient = new TextHttpClient(baseAddress, proxyHost);
+    }
 
     private void checkParam(String name, String value) throws IllegalArgumentException {
         if (value == null) {
