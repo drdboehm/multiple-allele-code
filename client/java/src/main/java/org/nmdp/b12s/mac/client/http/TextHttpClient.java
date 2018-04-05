@@ -57,7 +57,7 @@ public class TextHttpClient implements Closeable {
 
     @Inject
     public TextHttpClient(@Named("alleleCodeServiceUrl") String baseAddress) {
-        this(baseAddress, HttpClients.custom().setProxy(new HttpHost("192.168.2.115", 3128, "http")).build());
+        this(baseAddress, HttpClients.custom().build());
         
     }
 
