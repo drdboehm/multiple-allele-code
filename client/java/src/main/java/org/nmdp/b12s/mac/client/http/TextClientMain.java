@@ -92,7 +92,6 @@ public class TextClientMain implements Closeable {
                 } else if (f.exists()) {
                     processFile(f, client.operation);
                 } else {
-//                    String expanded = client.sendRequest(arg);
                     String performed = client.operation.perform(arg);
                     System.out.println(arg + " " + client.operation.getOperation() + "s to " + performed);
                 }
@@ -175,7 +174,7 @@ public class TextClientMain implements Closeable {
         while (null != (typing = lnr.readLine())) {
             lineNumber = lnr.getLineNumber();
 //            if (typing.length() < 6 || typing.indexOf('/') > 0) {
-            if (typing.length() < 12) {
+            if (typing.length() < 16) {
                 continue;// skip allele lists
             }
             try {
