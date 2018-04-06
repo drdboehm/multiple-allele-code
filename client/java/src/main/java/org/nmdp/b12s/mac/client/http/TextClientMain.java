@@ -174,8 +174,10 @@ public class TextClientMain implements Closeable {
         while (null != (typing = lnr.readLine())) {
             lineNumber = lnr.getLineNumber();
 //            if (typing.length() < 6 || typing.indexOf('/') > 0) {
-            if (typing.length() < 16) {
-                continue;// skip allele lists
+//                continue; // skip allele lists
+//            }
+            if (!typing.contains("*")) {
+                continue;  // skip lines without HLA-Typing which always contains a "*"
             }
             try {
                 String value = operation.perform(typing);
@@ -193,9 +195,9 @@ public class TextClientMain implements Closeable {
                             + "\n\t for typing: " + typing);
                 }
             } finally {
-                if (lineNumber % 200 == 0) {
-                    System.out.println(lineNumber + "\t " + new Date());
-                }
+//                if (lineNumber % 200 == 0) {
+//                    System.out.println(lineNumber + "\t " + new Date());
+//                }
             }
         }
         System.out.println("lines= " + lineNumber);

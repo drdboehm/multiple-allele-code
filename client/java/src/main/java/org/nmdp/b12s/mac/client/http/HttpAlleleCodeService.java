@@ -65,6 +65,9 @@ public class HttpAlleleCodeService implements MultipleAlleleCodeService, Closeab
         if (value.trim().isEmpty()) {
             throw new IllegalArgumentException("Empty " + name + " parameter");
         }
+        if (value.contains("NEW") || value.contains("XXX")){
+             throw new IllegalArgumentException("Misformed " + name + " parameter (NEW or XXX) ");
+        }
     }
 
     @Override
